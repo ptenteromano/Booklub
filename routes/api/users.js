@@ -28,9 +28,16 @@ router.post("/register", (req, res) => {
     return res.status(400).json(errors);
   }
 
-  User.findOne({ email: req.body.email }).then(user => {
+  // check if email or username is already taken
+  User.findOne({
+    $or: [{ email: req.body.email }, { username: req.body.username }]
+  }).then(user => {
     if (user) {
-      errors.email = "Email already exists";
+      if (user.email === req.body.email) {
+        errors.email = "Email already exists";
+      } else if (user.username === req.body.username) {
+        errors.username = "Username already taken";
+      }
       return res.status(400).json(errors);
     } else {
       const newUser = new User({

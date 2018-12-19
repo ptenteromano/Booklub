@@ -6,7 +6,7 @@ const passport = require("passport");
 
 // db collections
 const users = require("./routes/api/users");
-const profiles = require("./routes/api/profiles");
+const profile = require("./routes/api/profile");
 const posts = require("./routes/api/posts");
 
 const app = express();
@@ -30,12 +30,12 @@ mongoose
 // passport middleware
 app.use(passport.initialize());
 
-// passport config
+// passing 'passport' to config file
 require("./config/passport")(passport);
 
 // routes
 app.use("/api/users", users);
-app.use("/api/profiles", profiles);
+app.use("/api/profile", profile);
 app.use("/api/posts", posts);
 
 const port = process.env.PORT || 5000;
