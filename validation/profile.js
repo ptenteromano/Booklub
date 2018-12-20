@@ -3,10 +3,18 @@ const validator = require("validator");
 const isEmpty = require("./is-empty");
 
 module.exports = function validateProfileInput(data) {
-  let errors = {};
+  const errors = {};
 
   // make at least an empty string
+  data.username = !isEmpty(data.username) ? data.username : "";
   data.readerLevel = !isEmpty(data.readerLevel) ? data.readerLevel : "";
+
+  // username
+  if (validator.isEmpty(data.username)) {
+    errors.username = "Username is required";
+  } else if (!validator.isLength(data.username, { min: 2, max: 30 })) {
+    errors.username = "Username must be between 2 and 30 characters";
+  }
 
   // reader level
   if (validator.isEmpty(data.readerLevel)) {

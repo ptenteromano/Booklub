@@ -28,20 +28,17 @@ router.post("/register", (req, res) => {
     return res.status(400).json(errors);
   }
 
-  // check if email or username is already taken
-  User.findOne({
-    $or: [{ email: req.body.email }, { username: req.body.username }]
-  }).then(user => {
+  // check if email is already taken
+  User.findOne({ email: req.body.email }).then(user => {
     if (user) {
       if (user.email === req.body.email) {
         errors.email = "Email already exists";
-      } else if (user.username === req.body.username) {
-        errors.username = "Username already taken";
       }
       return res.status(400).json(errors);
     } else {
       const newUser = new User({
-        username: req.body.username,
+        firstname: req.body.firstname,
+        lastname: req.body.lastname,
         email: req.body.email,
         password: req.body.password
       });
@@ -51,7 +48,7 @@ router.post("/register", (req, res) => {
         bcrypt.hash(newUser.password, salt, (err, hash) => {
           if (err) throw err;
           newUser.password = hash;
-          // mongoose save newUser
+          // save newUser to db
           newUser
             .save()
             .then(user => res.json(user))
@@ -86,16 +83,18 @@ router.post("/login", (req, res) => {
     // check password
     bcrypt.compare(password, user.password).then(isMatch => {
       if (isMatch) {
-        // create jwt payload
+        // create jwt payload - all the data the token has
         const payload = {
           id: user.id,
-          username: user.username,
+          firstname: user.firstname,
+          lastname: user.lastname,
           email: user.email
         };
         // sign token
         jwt.sign(
           payload,
           keys.secretOrKey,
+          // 24 hours
           { expiresIn: 86400 },
           (err, token) => {
             res.json({
@@ -121,7 +120,8 @@ router.get(
   (req, res) => {
     res.json({
       id: req.user.id,
-      username: req.user.username,
+      firstname: req.user.firstname,
+      lastname: req.user.lastname,
       email: req.user.email
     });
   }
