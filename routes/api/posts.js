@@ -29,8 +29,8 @@ router.get("/", (req, res) => {
 // @route GET /api/posts/:id
 // @desc gets post by id
 // @access public
-router.get("/:id", (req, res) => {
-  Post.findById(req.params.id)
+router.get("/:post_id", (req, res) => {
+  Post.findById(req.params.post_id)
     .then(post => res.json(post))
     .catch(err =>
       res.status(404).json({ nopost: "No post found with that ID" })
@@ -66,12 +66,12 @@ router.post(
 // @desc delets posts
 // @access private
 router.delete(
-  "/:id",
+  "/:post_id",
   passport.authenticate("jwt", { session: false }),
   (req, res) => {
     Profile.findOne({ user: req.user.id })
       .then(profile => {
-        Post.findById(req.params.id)
+        Post.findById(req.params.post_id)
           .then(post => {
             // check for post owner
             if (post.user.toString() !== req.user.id) {
@@ -93,11 +93,11 @@ router.delete(
 // @desc likes a post
 // @access private
 router.post(
-  "/like/:id",
+  "/like/:post_id",
   passport.authenticate("jwt", { session: false }),
   (req, res) => {
     Profile.findOne({ user: req.user.id }).then(profile => {
-      Post.findById(req.params.id).then(post => {
+      Post.findById(req.params.post_id).then(post => {
         // check if user already liked post
         if (
           post.likes.filter(like => like.user.toString() === req.user.id)
@@ -121,10 +121,10 @@ router.post(
 // @desc unlikes a post
 // @access private
 router.delete(
-  "/like/:id",
+  "/like/:post_id",
   passport.authenticate("jwt", { session: false }),
   (req, res) => {
-    Post.findById(req.params.id).then(post => {
+    Post.findById(req.params.post_id).then(post => {
       // check if user already liked post
       if (
         post.likes.filter(like => like.user.toString() === req.user.id)
@@ -149,7 +149,7 @@ router.delete(
 // @desc comments on a post
 // @access private
 router.post(
-  "/comment/:id",
+  "/comment/:post_id",
   passport.authenticate("jwt", { session: false }),
   (req, res) => {
     const { errors, isValid } = validatePostInput(req.body);
@@ -159,7 +159,7 @@ router.post(
       return res.status(400).json(errors);
     }
 
-    Post.findById(req.params.id)
+    Post.findById(req.params.post_id)
       .then(post => {
         const newComment = {
           text: req.body.text,
@@ -179,47 +179,57 @@ router.post(
   }
 );
 
-// @route DELETE /api/posts/comment/:id
-// @desc comments on a post
+// @route DELETE /api/posts/comment/:id/:comment_id
+// @desc deletes comment from post
 // @access private
 router.delete(
-  "/comment/:id", // TODO need to change route?
+  "/comment/:post_id/:comment_id",
   passport.authenticate("jwt", { session: false }),
   (req, res) => {
     const errors = {};
 
-    Post.findById(req.params.id)
+    Post.findById(req.params.post_id)
       .then(post => {
-        
-        // no comments to remove
-        if (post.comments.length === 0) {
-          errors.comments = "No comments to remove";
-          return res.status(400).json(errors);
-        }
-
-        // check for post ownership
-        let postOwner = false;
-        if (post.user.toString() === req.user.id) {
-          postOwner === true;
-          // else, check if current user is deleting their comment
-        } else if (
+        // check if comment exists
+        if (
           post.comments.filter(
-            comment => comment.user.toString() === req.user.id
+            comment => comment._id.toString() === req.params.comment_id
           ).length === 0
         ) {
-          errors.comments = "Can only delete your own comments";
-          return res.status(400).json(errors);
+          errors.comments = "That comment does not exist";
+          return res.status(404).json(errors);
         }
 
-        // add to comments array
-        post.comments.unshift(newComment);
+        // get remove index
+        const removeIndex = post.comments
+          .map(comment => comment._id.toString())
+          .indexOf(req.params.comment_id);
+
+        post.comments.splice(removeIndex, 1);
 
         post.save().then(post => res.json(post));
+
+        // TODO: allow post owners to delete any comments on their posts
+        // check for post ownership
+        // let postOwner = false;
+        // if (post.user.toString() === req.user.id) {
+        //   postOwner === true;
+        //   // else, check if current user is deleting their comment
+        // } else if (
+        //   post.comments.filter(
+        //     comment => comment.user.toString() === req.user.id
+        //   ).length === 0
+        // ) {
+        //   errors.comments = "Can only delete your own comments";
+        //   return res.status(400).json(errors);
+        // }
       })
       .catch(err =>
-        res.status(404).json({ nopost: "Unable to add comment to post" })
+        res.status(404).json({ nopost: "Unable to delete comment" })
       );
   }
 );
+
+// TODO get all comments route
 
 module.exports = router;
