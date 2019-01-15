@@ -34,14 +34,19 @@
 /* ------- */
 
 /* my css */
-.title {
-  text-align: center;
-  color: white;
-}
-
 .home-landing {
   background: url(./img//booklubbg.jpeg) no-repeat;
   background-size: cover;
   background-position: center;
   height: 100vh;
+  margin: 2rem 4rem;
+}
+
+/* header */
+.header-primary {
+  background-color: black;
+}
+
+.header-title {
+  color: white;
 }
